@@ -1,0 +1,38 @@
+:root {
+  --cell-size: 4ch;
+  --thin-border: 1px;
+  --thicc-border: 3px;
+  --normal-color: black;
+  --given-color: green;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+td {
+  border: var(--thin-border) solid var(--normal-color);
+  width: var(--cell-size);
+  height: var(--cell-size);
+  text-align: center;
+}
+
+td.given {
+  color: var(--given-color);
+}
+
+td.top {
+  border-top-width: var(--thicc-border);
+}
+
+td.bottom {
+  border-bottom-width: var(--thicc-border);
+}
+
+td.right {
+  border-right-width: var(--thicc-border);
+}
+
+td.left {
+  border-left-width: var(--thicc-border);
+}
