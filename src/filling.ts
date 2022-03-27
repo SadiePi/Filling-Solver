@@ -2,6 +2,11 @@
 export type Cell = [actual: number, guess: number];
 export type Puzzle = Cell[][];
 
+export function getDisplay(cell: Cell) {
+  if (Number.isNaN(cell[1])) return cell[0];
+  return cell[1];
+}
+
 // generate a random puzzle (currently not random)
 export function generate(w: 7, h: 7, seed?: number): Puzzle {
   // temporary hard-coded puzzle

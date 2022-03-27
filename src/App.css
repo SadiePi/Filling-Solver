@@ -36,3 +36,7 @@ td.right {
 td.left {
   border-left-width: var(--thicc-border);
 }
+
+td.selected {
+  background-color: lightgray;
+}

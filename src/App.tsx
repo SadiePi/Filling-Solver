@@ -1,19 +1,47 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
-import { Cell, generate, Puzzle } from "./filling";
+import { Cell, generate, getDisplay, Puzzle } from "./filling";
 
 // kinda hacky but i like it
+type Tag<S extends string> = ` ${S}` | "";
 type CellBaseStyle = "blank" | "given" | "normal" | "correct" | "incorrect" | "revealed";
-type CellBorderStyle = `${"left " | ""}${"right " | ""}${"top " | ""}${"bottom " | ""}`;
-type CellStyle = `${CellBorderStyle}${CellBaseStyle}${" impossible" | ""}`;
+type CellBorderStyle = `${Tag<"left">}${Tag<"right">}${Tag<"top">}${Tag<"bottom">}`;
+type CellStyle = `${CellBaseStyle}${CellBorderStyle}${Tag<"impossible">}${Tag<"selected">}`;
 
 function App() {
   const [puzzle, setPuzzle] = useState(generate(7, 7));
   const [reveal, setReveal] = useState(false);
   const [showCorrect, setShowCorrect] = useState(false);
+  const [selected, setSelected] = useState<Cell[]>([]);
+  const [selecting, setSelecting] = useState(false);
+
+  useEffect(() => {
+    const keypress = (ev: KeyboardEvent) => {
+      try {
+        console.log("key");
+
+        const i = parseInt(ev.key);
+        selected.forEach(c => (c[1] = i));
+      } catch {}
+      setPuzzle(p => [...p]);
+    };
+    document.addEventListener("keypress", keypress);
+
+    const mouseup = () => setSelecting(false);
+    document.addEventListener("mouseup", mouseup);
+
+    const mousemove = (ev: MouseEvent) => ev.preventDefault();
+    document.addEventListener("mousemove", mousemove);
+    return () => {
+      document.removeEventListener("keypress", keypress);
+      document.removeEventListener("mouseup", mouseup);
+      document.removeEventListener("mousemove", mousemove);
+    };
+  }, [puzzle, selected]);
 
   // decide the className with which to display a cell
   function cellStyle(puzzle: Puzzle, cell: Cell, row: number, col: number): CellStyle {
+    // this is nice
     let base: CellBaseStyle = "normal";
     if (Number.isNaN(cell[1])) base = "given";
     else if (reveal) base = "revealed";
@@ -23,23 +51,33 @@ function App() {
       else base = "incorrect";
     }
 
+    // this is gross
     let border: CellBorderStyle = "";
-    if (row === 0 || (cell[1] !== 0 && puzzle[row - 1][col][1] !== 0 && cell[1] !== puzzle[row - 1][col][1]))
-      border += "top ";
+    const display = getDisplay(cell);
+    if (
+      row === 0 ||
+      (display !== 0 && getDisplay(puzzle[row - 1][col]) !== 0 && display !== getDisplay(puzzle[row - 1][col]))
+    )
+      border += " top";
     if (
       row === puzzle.length - 1 ||
-      (cell[1] !== 0 && puzzle[row + 1][col][1] !== 0 && cell[1] !== puzzle[row + 1][col][1])
+      (display !== 0 && getDisplay(puzzle[row + 1][col]) !== 0 && display !== getDisplay(puzzle[row + 1][col]))
     )
-      border += "bottom ";
-    if (col === 0 || (cell[1] !== 0 && puzzle[row][col - 1][1] !== 0 && cell[1] !== puzzle[row][col - 1][1]))
-      border += "left ";
+      border += " bottom";
+    if (
+      col === 0 ||
+      (display !== 0 && getDisplay(puzzle[row][col - 1]) !== 0 && display !== getDisplay(puzzle[row][col - 1]))
+    )
+      border += " left";
     if (
       col === puzzle[0].length - 1 ||
-      (cell[1] !== 0 && puzzle[row][col + 1][1] !== 0 && cell[1] !== puzzle[row][col + 1][1])
+      (display !== 0 && getDisplay(puzzle[row][col + 1]) !== 0 && display !== getDisplay(puzzle[row][col + 1]))
     )
-      border += "right ";
+      border += " right";
 
-    return `${border as CellBorderStyle}${base}`;
+    // TODO check impossible
+
+    return `${base}${border as CellBorderStyle}${selected.includes(cell) ? " selected" : ""}`;
   }
 
   return (
@@ -48,13 +86,27 @@ function App() {
         {puzzle.map((row, rk) => (
           <tr key={rk}>
             {row.map((cell, ck) => (
-              <td key={ck} className={cellStyle(puzzle, cell, rk, ck)}>
+              <td
+                onMouseDown={() => {
+                  if (Number.isNaN(cell[1])) return;
+                  setSelected([cell]);
+                  setSelecting(true);
+                }}
+                onMouseEnter={() => {
+                  if (Number.isNaN(cell[1])) return;
+                  if (selecting && !selected.includes(cell)) {
+                    setSelected([cell, ...selected]);
+                  }
+                }}
+                key={ck}
+                className={cellStyle(puzzle, cell, rk, ck)}>
                 {Number.isNaN(cell[1]) ? cell[0] : cell[1] === 0 ? "" : cell[1]}
               </td>
             ))}
           </tr>
         ))}
       </tbody>
+      {/* <caption>{selected.map(getDisplay)}</caption> */}
     </table>
   );
 }
